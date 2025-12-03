@@ -12,7 +12,7 @@ function LandingPage() {
       </p>
 
       <button
-        onClick={() => nav('/recipe')}
+        onClick={() => nav('/form')}
         className="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition text-lg"
       >
         Start Cooking Plan
