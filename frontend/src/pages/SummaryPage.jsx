@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useFormContext } from "../contexts/FormContext";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = `${import.meta.env.VITE_API_URL}generate/ingredients`;
+const API_URL = `${import.meta.env.VITE_API_URL}generate/ingredients/`;
 
 export default function SummaryPage() {
   const { form } = useFormContext();
