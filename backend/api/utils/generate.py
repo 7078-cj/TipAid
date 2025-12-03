@@ -6,6 +6,7 @@ import environ
 import os
 from django.conf import settings
 import pandas as pd
+from rest_framework.response import Response
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -72,4 +73,8 @@ def read_csv(store):
         raise pd.errors.ParserError(f"Error parsing CSV file {dataset_path}: {str(e)}")
     except Exception as e:
         raise Exception(f"Unexpected error reading {dataset_path}: {str(e)}")
+    
+def check_loaded(csv):
+    if csv is None or len(csv) == 0:
+        return Response({"error": f"{csv} CSV not loaded or empty."}, status=500)
     

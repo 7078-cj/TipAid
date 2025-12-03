@@ -1,52 +1,65 @@
-from rest_framework import generics
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-import google.generativeai as genai
 import json
 from pathlib import Path
 import environ
 import os
-from rest_framework.permissions import AllowAny
-from ..utils.generate import generate, read_csv
+from ..utils.generate import generate, read_csv, check_loaded
+from asgiref.sync import async_to_sync
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+from django.conf import settings
 
-
-genai.configure(api_key=env('AI_KEY'))
-
-
-
+if not hasattr(settings, "CSV_CACHE"):
+    osave = read_csv("osave")
+    dali = read_csv("dali")
+    dti = read_csv("dti")
+    check_loaded(osave)
+    check_loaded(dali)
+    check_loaded(dti)
+    settings.CSV_CACHE = {"osave": osave, "dali": dali, "dti": dti}
 
 @api_view(["GET"])
 def generate_recommendation(request):
 
+    # ---------------------------
+    # GET PARAMS
+    # ---------------------------
     people = request.query_params.get("people")
     budget = request.query_params.get("budget")
     ingredients_raw = request.query_params.get("ingredients")
 
-    # Parse ingredients from JSON string → Python list
+    # Parse ingredients
     try:
         ingredients = json.loads(ingredients_raw) if ingredients_raw else []
     except:
-        ingredients = []
+        return Response({"error": "Invalid ingredients JSON format."}, status=400)
 
-    # Convert budget to float if present
+    # Convert budget
     try:
         budget = float(budget) if budget else None
     except:
-        budget = None
+        return Response({"error": "Budget must be a number."}, status=400)
 
-    # Load CSV store datasets
-    osave = read_csv("osave")
-    dali = read_csv("dali")
-    dti = read_csv("dti")
+    # ---------------------------
+    # LOAD CSVs SAFELY
+    # ---------------------------
+    data = settings.CSV_CACHE
+    osave = data["osave"]
+    dali = data["dali"]
+    dti = data["dti"]
 
-    # ----------- AI PROMPT -----------------
-    
+    # Validate CSV data
+    check_loaded(osave)
+    check_loaded(dali)
+    check_loaded(dti)
+
+    # ---------------------------
+    # AI PROMPT
+    # ---------------------------
     prompt = f"""
     You are a system that compares ingredient prices across three stores: Osave, Dali, and DTI.
 
@@ -61,19 +74,19 @@ def generate_recommendation(request):
 
     TASKS:
     1. For EACH INGREDIENT:
-    - Find its price from all three stores.
-    - Choose the CHEAPEST price.
-    - Store must reflect where that cheapest value came from.
+       - Find its price from all three stores.
+       - Choose the CHEAPEST price.
+       - Store must reflect where that cheapest value came from.
 
     2. Multiply ingredient amount based on number of people (if applicable).
     3. Sum all chosen cheapest prices = total_cost.
     4. Determine the recommended_store:
-        - The store that provided the MOST cheapest ingredients.
-        - If tie, choose the store with the overall lower total contribution.
+         - The store that provided the MOST cheapest ingredients.
+         - If tie, choose the store with the overall lower total contribution.
 
     5. Compare total_cost with budget:
-        - within_budget = true if total_cost <= budget.
-        - If cost exceeds budget, adjusted_budget = total_cost.
+         - within_budget = true if total_cost <= budget.
+         - If cost exceeds budget, adjusted_budget = total_cost.
 
     Return ONLY valid JSON in this exact format:
 
@@ -100,11 +113,8 @@ def generate_recommendation(request):
     - Produce STRICT VALID JSON ONLY — no extra text or comments.
     """
 
-    # ---------------------------------------
-
+    # ---------------------------
+    # RUN AI
+    # ---------------------------
     ai_response = generate(prompt)
     return Response(ai_response)
-
-
-
-    
