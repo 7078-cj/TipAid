@@ -64,29 +64,39 @@ export default function RecipeResultsPage() {
 
     const payload = {
       people: recipe.people,
-      budget: formattedBudget, 
+      budget: formattedBudget,
       ingredients: groceryList,
     };
 
     console.log("Sending Payload:", payload);
 
     try {
+      // 1. Check your URL. Is it 'generate/' or 'recommend/'?
+      // Ensure this matches your Django urls.py
       const res = await fetch(`${API_URL}generate/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-
-      if (res.ok) {
-        updateForm("Recommendation", data);
-        navigate("/recommendation");
-      } else {
-        alert(data.error || "Error generating recommendation");
+      if (!res.ok) {
+        const errorText = await res.text(); 
+        console.error("Server Error:", errorText); 
+        try {
+          const jsonError = JSON.parse(errorText);
+          alert(jsonError.error || "Server returned an error");
+        } catch {
+          alert("Server error (HTML response). Check console for details.");
+        }
+        return;
       }
+
+      const data = await res.json();
+      updateForm("Recommendation", data);
+      navigate("/recommendation");
     } catch (error) {
-      console.error(error);
+      console.error("Network or Parsing Error:", error);
+      alert("Network error. Please ensure backend is running.");
     } finally {
       setIsGenerating(false);
     }
@@ -217,7 +227,7 @@ export default function RecipeResultsPage() {
                           quantity: e.target.value,
                         })
                       }
-                      placeholder="Qty"
+                      placeholder="Quantity (e.g., 500 g)"
                       className="flex-1 px-4 py-4 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium"
                     />
                     <button
