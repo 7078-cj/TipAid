@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useFormContext } from "../context/FormContext"; // adjust path if needed
+import { useFormContext } from "../contexts/FormContext";
 
 export default function RecommendationResultsPage() {
   const { form } = useFormContext();
