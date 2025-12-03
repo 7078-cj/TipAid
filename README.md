@@ -28,118 +28,136 @@ We utilize a modern, high-performance stack to deliver real-time calculations an
 
 🛠️ Setup Instructions
 ----------------------
-
 Follow the steps below to set up the project locally.
 
-### Prerequisites
+---
 
-Ensure you have the following installed:
+## 1. Clone the Repository
 
-*   **Python** (v3.8+)
-    
-*   **Node.js** (v14+) & **npm** (or yarn)
-    
+```bash
+git clone https://github.com/7078-cj/TipAid.git
+cd TipAid
+```
 
-### 1\. Clone the Repository
+---
 
-Bash
+## 2. Backend Setup
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   git clone https://github.com/7078-cj/TipAid.git  cd TipAid   `
+```bash
+cd backend
+```
 
-### 2\. Backend Setup
+### Create Virtual Environment
 
-Navigate to the backend directory:
-
-Bash
-
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   cd backend   `
-
-#### Create Virtual Environment
-
-Bash
-
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   python -m venv venv   `
+```bash
+python -m venv venv
+```
 
 Activate it:
 
-*   Bashvenv\\Scripts\\activate
-    
-*   Bashsource venv/bin/activate
-    
+**Windows**
 
-#### Install Dependencies
+```bash
+venv\Scripts\activate
+```
 
-Bash
+**Mac/Linux**
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   pip install -r requirements.txt   `
+```bash
+source venv/bin/activate
+```
 
-#### Environment Variables
+### Install Dependencies
 
-Create a .env file in the backend directory (or copy the example):
+```bash
+pip install -r requirements.txt
+```
 
-Bash
+### Environment Variables
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   cp .env.example .env   `
+If the project includes `.env.example`:
 
-> **Note:** Ensure you add your Google Gemini API Key in the .env file.
+```bash
+cp .env.example .env
+```
 
-#### Run Migrations
+Then fill in all required values.
 
-Bash
+### Run Migrations (if applicable)
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   python manage.py migrate   `
+```bash
+python manage.py migrate
+```
 
-#### Start Backend Server
+### Start Backend Server
 
-Bash
+```bash
+python manage.py runserver
+```
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   python manage.py runserver   `
+Backend URL:
 
-_Backend runs at:_ http://127.0.0.1:8000
+```
+http://127.0.0.1:8000
+```
 
-### 3\. Frontend Setup
+---
 
-Open a **new terminal window** and navigate to the frontend directory:
+## 3. Frontend Setup
 
-Bash
+Open a new terminal:
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   cd frontend   `
+```bash
+cd frontend
+```
 
-#### Install Dependencies
+### Install Dependencies
 
-Bash
+```bash
+npm install
+# or
+yarn install
+```
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   npm install  # or  yarn install   `
+### Configure API URL (if required)
 
-#### Configure API URL
+In `.env` or configuration:
 
-Create a .env file in the frontend directory:
+```
+VITE_API_URL=http://127.0.0.1:8000
+```
 
-Bash
+### Start Frontend Server
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   VITE_API_URL=http://127.0.0.1:8000   `
+```bash
+npm start
+# or
+yarn start
+```
 
-#### Start Frontend Server
+Frontend URL:
 
-Bash
+```
+http://localhost:3000
+```
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   npm start  # or  yarn start   `
+---
 
-_Frontend runs at:_ http://localhost:3000
+## 4. Optional: Docker Setup
 
-### 4\. Optional: Docker Setup
+If Docker is available:
 
-If you prefer using Docker to run the entire stack at once:
+```bash
+docker-compose up --build
+```
 
-Bash
+This starts both backend and frontend.
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   docker-compose up --build   `
+---
 
-✅ Setup Complete
-----------------
+## 5. Setup Complete
 
-You are ready to go!
+* Frontend running at: **[http://localhost:3000](http://localhost:3000)**
+* Backend running at: **[http://127.0.0.1:8000](http://127.0.0.1:8000)**
 
-*   **Frontend:** [http://localhost:3000](https://www.google.com/search?q=http://localhost:3000)
-    
-*   **Backend:** [http://127.0.0.1:8000](http://127.0.0.1:8000/)
+You now have TipAid running locally.
