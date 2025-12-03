@@ -10,6 +10,8 @@ export function FormProvider({ children }) {
     Address: "",
     AddressLat: null,
     AddressLng: null,
+
+    RecipeData: null,
   });
 
   const updateForm = useCallback((key, value) => {
