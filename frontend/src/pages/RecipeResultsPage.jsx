@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 const API_URL = `${import.meta.env.VITE_API_URL}generate/`;
 
 export default function RecipeResultsPage() {
-  const { form } = useFormContext();
+  const { form, updateForm } = useFormContext(); // ← added updateForm
   const navigate = useNavigate();
 
   const recipe = form.RecipeData;
@@ -50,6 +50,7 @@ export default function RecipeResultsPage() {
     setShowCustomLeft(false);
   };
 
+  // ⭐ UPDATED FUNCTION
   const handleGenerateRecommendation = async () => {
     if (groceryList.length === 0) {
       alert("Add ingredients first.");
@@ -73,13 +74,12 @@ export default function RecipeResultsPage() {
     const data = await res.json();
 
     if (res.ok) {
-      navigate("/recommendation", {
-        state: { recommendation: data },
-      });
+      updateForm("Recommendation", data);
+
+      navigate("/recommendation"); 
     } else {
       alert("Error generating recommendation");
-      // ❌ Removed: setIsGenerating(false);
-      // Button stays disabled permanently after first submit
+      setIsGenerating(false);
     }
   };
 
@@ -94,7 +94,7 @@ export default function RecipeResultsPage() {
         </div>
 
         <div className="p-8 flex gap-6">
-          {/* LEFT SECTION — INGREDIENTS */}
+          {/* LEFT SECTION */}
           <div className="flex-1">
             <h2 className="text-2xl font-bold mb-4">Ingredients 🍳</h2>
 
@@ -117,7 +117,6 @@ export default function RecipeResultsPage() {
               </div>
             ))}
 
-            {/* Add custom ingredient (LEFT SIDE) */}
             {!showCustomLeft ? (
               <button
                 onClick={() => setShowCustomLeft(true)}
@@ -153,7 +152,7 @@ export default function RecipeResultsPage() {
             )}
           </div>
 
-          {/* RIGHT SECTION — GROCERY LIST */}
+          {/* RIGHT SECTION */}
           <div className="flex-1">
             <h2 className="text-2xl font-bold mb-4">
               Grocery List ({groceryList.length})
