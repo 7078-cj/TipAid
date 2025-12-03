@@ -1,10 +1,12 @@
 import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useFormContext } from "../contexts/FormContext";
 
 export default function RecommendationResultsPage() {
-  const { state } = useLocation();
+  const { form } = useFormContext();
   const navigate = useNavigate();
-  const recommendation = state?.recommendation;
+
+  const recommendation = form.Recommendation; // ← pull from FormContext
 
   if (!recommendation) {
     return (
@@ -38,7 +40,6 @@ export default function RecommendationResultsPage() {
   const storeNames = ["osave", "dali", "dti"];
   const displayStore = (store) => store.toUpperCase();
 
-  // Determine the main budget status message
   let budgetStatusText;
   let budgetStatusColor;
   if (within_budget) {
@@ -54,7 +55,7 @@ export default function RecommendationResultsPage() {
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center p-8 font-sans">
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-200">
-        {/* Header: Recommendation Summary */}
+        {/* Header */}
         <div className="p-8 bg-gray-900 text-white">
           <h1 className="text-3xl font-extrabold tracking-tight mb-2">
             💰 Cheapest Shopping Plan
@@ -79,19 +80,19 @@ export default function RecommendationResultsPage() {
           </div>
         </div>
 
-        {/* Budget Status Alert */}
+        {/* Budget Alert */}
         <div
           className={`p-4 mx-8 -mt-4 mb-4 rounded-xl font-semibold border ${budgetStatusColor} shadow-md`}
         >
           {budgetStatusText}
         </div>
 
+        {/* Breakdown */}
         <div className="p-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">
             Detailed Price Breakdown
           </h2>
 
-          {/* Ingredient Table */}
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -115,6 +116,7 @@ export default function RecommendationResultsPage() {
                   </th>
                 </tr>
               </thead>
+
               <tbody className="bg-white divide-y divide-gray-200">
                 {ingredients.map((item, index) => (
                   <tr key={index}>
@@ -124,6 +126,7 @@ export default function RecommendationResultsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {item.quantity}
                     </td>
+
                     {storeNames.map((store) => {
                       const price = item.prices[store];
                       const isCheapest = item.cheapest_store === store;
@@ -140,8 +143,9 @@ export default function RecommendationResultsPage() {
                         </td>
                       );
                     })}
+
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-teal-800 bg-teal-100">
-                      {item.cheapest_price !== null
+                      {item.cheapest_price
                         ? `₱${item.cheapest_price.toFixed(2)}`
                         : "N/A"}
                     </td>
@@ -151,7 +155,7 @@ export default function RecommendationResultsPage() {
             </table>
           </div>
 
-          {/* Footer Actions */}
+          {/* Buttons */}
           <div className="mt-8 flex justify-center gap-4">
             <button
               onClick={() => navigate("/")}
@@ -159,6 +163,7 @@ export default function RecommendationResultsPage() {
             >
               ← Start New Plan
             </button>
+
             <button
               onClick={() => navigate(-1)}
               className="px-6 py-3 bg-teal-600 text-white rounded-xl hover:bg-teal-700 active:scale-95 transition font-semibold"
