@@ -71,32 +71,22 @@ export default function RecipeResultsPage() {
     console.log("Sending Payload:", payload);
 
     try {
-      // 1. Check your URL. Is it 'generate/' or 'recommend/'?
-      // Ensure this matches your Django urls.py
       const res = await fetch(`${API_URL}generate/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        const errorText = await res.text(); 
-        console.error("Server Error:", errorText); 
-        try {
-          const jsonError = JSON.parse(errorText);
-          alert(jsonError.error || "Server returned an error");
-        } catch {
-          alert("Server error (HTML response). Check console for details.");
-        }
-        return;
-      }
-
       const data = await res.json();
-      updateForm("Recommendation", data);
-      navigate("/recommendation");
+
+      if (res.ok) {
+        updateForm("Recommendation", data);
+        navigate("/recommendation");
+      } else {
+        alert(data.error || "Error generating recommendation");
+      }
     } catch (error) {
-      console.error("Network or Parsing Error:", error);
-      alert("Network error. Please ensure backend is running.");
+      console.error(error);
     } finally {
       setIsGenerating(false);
     }
