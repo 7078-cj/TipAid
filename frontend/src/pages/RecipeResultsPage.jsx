@@ -11,31 +11,54 @@ import {
   Loader2,
   CheckCircle2,
   Utensils,
-  Coins,
+  ChevronLeft,
+  ChevronRight,
+  Wallet,
+  AlertCircle,
 } from "lucide-react";
 import { API_URL } from "../utils/config";
+
+const ITEMS_PER_PAGE = 5;
 
 export default function RecipeResultsPage() {
   const { form, updateForm } = useFormContext();
   const navigate = useNavigate();
 
   const recipe = form.RecipeData;
-
   const [ingredients, setIngredients] = useState(recipe?.ingredients || []);
-
   const [groceryList, setGroceryList] = useState([]);
 
+  // Budget State & Validation
   const [budget, setBudget] = useState(recipe?.budget || "");
+  const [budgetError, setBudgetError] = useState(false);
 
+  // Custom Item State
   const [customLeft, setCustomLeft] = useState({ name: "", quantity: "" });
   const [showCustomLeft, setShowCustomLeft] = useState(false);
+
+  // UI State
   const [isGenerating, setIsGenerating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   if (!recipe) {
     setTimeout(() => navigate("/"), 0);
     return null;
   }
 
+  // --- Logic: Pagination ---
+  const totalPages = Math.ceil(
+    (ingredients.length + (showCustomLeft ? 1 : 1)) / ITEMS_PER_PAGE
+  );
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const currentIngredients = ingredients.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
+
+  const nextPage = () => setCurrentPage((p) => Math.min(totalPages, p + 1));
+  const prevPage = () => setCurrentPage((p) => Math.max(1, p - 1));
+
+  // --- Logic: List Management ---
   const addItemToGrocery = (item) => {
     if (groceryList.some((g) => g.name === item.name)) return;
     setGroceryList((prev) => [...prev, item]);
@@ -51,24 +74,29 @@ export default function RecipeResultsPage() {
     setShowCustomLeft(false);
   };
 
+  // --- Logic: Submission ---
   const handleGenerateRecommendation = async () => {
+    // 1. Validate Basket
     if (groceryList.length === 0) {
       alert("Please add at least one item to your basket.");
       return;
     }
 
-    setIsGenerating(true);
+    // 2. Validate Budget (REQUIRED NOW)
+    if (!budget || isNaN(budget) || parseFloat(budget) <= 0) {
+      setBudgetError(true);
+      // Shake effect or focus could go here
+      return;
+    }
+    setBudgetError(false);
 
-    const formattedBudget =
-      budget && !isNaN(budget) ? parseFloat(budget) : null;
+    setIsGenerating(true);
 
     const payload = {
       people: recipe.people,
-      budget: formattedBudget,
+      budget: parseFloat(budget),
       ingredients: groceryList,
     };
-
-    console.log("Sending Payload:", payload);
 
     try {
       const res = await fetch(`${API_URL}generate/`, {
@@ -87,262 +115,271 @@ export default function RecipeResultsPage() {
       }
     } catch (error) {
       console.error(error);
+      alert("Network Error");
     } finally {
       setIsGenerating(false);
     }
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 pb-24">
-      <div className="mt-8 mb-10 animate-in slide-in-from-top-4 duration-500">
-        <button
-          onClick={() => navigate("/")}
-          className="group flex items-center gap-2 text-gray-500 hover:text-emerald-600 font-medium transition-colors mb-6"
-        >
-          <div className="p-2 rounded-full bg-gray-100 group-hover:bg-emerald-50 transition-colors">
-            <ArrowLeft size={16} />
-          </div>
-          Back to Search
-        </button>
-
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+    // Main Container: Fixed height to fit in view (calc 100vh - nav/padding)
+    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 h-[calc(100vh-40px)] flex flex-col">
+      {/* --- Header (Compact) --- */}
+      <div className="shrink-0 pt-6 pb-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate("/")}
+            className="p-2 rounded-full bg-gray-100 hover:bg-emerald-100 hover:text-emerald-600 transition-colors"
+          >
+            <ArrowLeft size={20} />
+          </button>
           <div>
-            <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wide mb-4 gap-1">
-              <ChefHat size={14} />
-              Recipe Found
+            <div className="flex items-center gap-2 text-emerald-600 text-xs font-bold uppercase tracking-wide">
+              <ChefHat size={12} /> Recipe Found
             </div>
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight">
-              {recipe.dish}
+            <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight">
+              {recipe.dish}{" "}
+              <span className="text-gray-400 font-medium text-lg ml-2">
+                ({recipe.people} servings)
+              </span>
             </h1>
-          </div>
-
-          <div className="flex gap-3">
-            <div className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl shadow-sm text-sm font-bold text-gray-700">
-              <Utensils size={18} className="text-emerald-500" />
-              {recipe.people} People
-            </div>
           </div>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8 items-start">
-        <div className="bg-white rounded-3xl border border-gray-200 shadow-xl shadow-gray-200/40 overflow-hidden animate-in slide-in-from-left-4 duration-500 delay-100">
-          <div className="p-6 md:p-8 border-b border-gray-100 bg-gray-50/50">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-              <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
-                <Utensils size={20} />
-              </div>
-              Select Ingredients
-            </h2>
-            <p className="text-gray-500 mt-2 text-lg">
-              Add the items you need to buy.
-            </p>
+      {/* --- Main Content Grid (Fills remaining height) --- */}
+      <div className="flex-1 grid lg:grid-cols-2 gap-6 min-h-0 pb-6">
+        {/* --- LEFT: Ingredients (Paginated Card) --- */}
+        <div className="bg-white rounded-3xl border border-gray-200 shadow-xl shadow-gray-100 flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="p-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Utensils size={18} className="text-emerald-500" /> Select
+                Ingredients
+              </h2>
+              <p className="text-xs text-gray-500">
+                Page {currentPage} of {totalPages}
+              </p>
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="flex gap-2">
+              <button
+                onClick={prevPage}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg border hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={nextPage}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg border hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
 
-          <div className="p-6 md:p-8 space-y-3">
-            {ingredients.map((item, i) => {
+          {/* Scrollable List Area */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-3">
+            {currentIngredients.map((item, i) => {
               const isAdded = groceryList.some((g) => g.name === item.name);
               return (
                 <div
                   key={i}
-                  className={`
-                    group flex items-center justify-between p-4 rounded-2xl border transition-all duration-200
-                    ${
-                      isAdded
-                        ? "bg-emerald-50 border-emerald-100 opacity-60"
-                        : "bg-white border-gray-200 hover:border-emerald-300 hover:shadow-md hover:shadow-emerald-100/50"
-                    }
-                  `}
+                  className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                    isAdded
+                      ? "bg-emerald-50 border-emerald-100 opacity-60"
+                      : "bg-white border-gray-100 hover:shadow-md"
+                  }`}
                 >
                   <div>
                     <p
-                      className={`font-bold text-lg ${
+                      className={`font-bold ${
                         isAdded ? "text-emerald-800" : "text-gray-800"
                       }`}
                     >
                       {item.name}
                     </p>
-                    <p
-                      className={`text-sm ${
-                        isAdded ? "text-emerald-600" : "text-gray-500"
-                      }`}
-                    >
-                      {item.quantity}
-                    </p>
+                    <p className="text-xs text-gray-500">{item.quantity}</p>
                   </div>
-
                   <button
                     onClick={() => addItemToGrocery(item)}
                     disabled={isAdded}
-                    className={`
-                      flex items-center justify-center w-12 h-12 rounded-full transition-all
-                      ${
-                        isAdded
-                          ? "bg-emerald-100 text-emerald-600 cursor-default"
-                          : "bg-gray-100 text-gray-400 group-hover:bg-emerald-500 group-hover:text-white"
-                      }
-                    `}
+                    className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+                      isAdded
+                        ? "text-emerald-600 bg-emerald-100"
+                        : "bg-gray-100 text-gray-400 hover:bg-emerald-500 hover:text-white"
+                    }`}
                   >
-                    {isAdded ? <CheckCircle2 size={22} /> : <Plus size={22} />}
+                    {isAdded ? <CheckCircle2 size={16} /> : <Plus size={16} />}
                   </button>
                 </div>
               );
             })}
 
-            {!showCustomLeft ? (
+            {/* Custom Item Input (Shows on last page or if toggled) */}
+            {!showCustomLeft && currentPage === totalPages && (
               <button
                 onClick={() => setShowCustomLeft(true)}
-                className="w-full mt-6 py-4 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 font-bold hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 font-bold hover:border-emerald-400 hover:text-emerald-600 text-sm flex items-center justify-center gap-2"
               >
-                <Plus size={20} />
-                Add Custom Item
+                <Plus size={16} /> Add Custom Item
               </button>
-            ) : (
-              <div className="mt-6 p-5 bg-gray-50 rounded-2xl border border-gray-200 animate-in fade-in slide-in-from-top-2">
-                <div className="flex flex-col gap-3">
+            )}
+
+            {showCustomLeft && (
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 animate-in fade-in">
+                <input
+                  value={customLeft.name}
+                  onChange={(e) =>
+                    setCustomLeft({ ...customLeft, name: e.target.value })
+                  }
+                  placeholder="Ingredient Name"
+                  className="w-full px-3 py-2 bg-white border rounded-lg text-sm mb-2 focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                />
+                <div className="flex gap-2">
                   <input
-                    value={customLeft.name}
+                    value={customLeft.quantity}
                     onChange={(e) =>
-                      setCustomLeft({ ...customLeft, name: e.target.value })
+                      setCustomLeft({ ...customLeft, quantity: e.target.value })
                     }
-                    placeholder="Ingredient Name (e.g. Soy Sauce)"
-                    className="w-full px-4 py-4 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium"
+                    placeholder="Qty"
+                    className="flex-1 px-3 py-2 bg-white border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500/20 outline-none"
                   />
-                  <div className="flex gap-3">
-                    <input
-                      value={customLeft.quantity}
-                      onChange={(e) =>
-                        setCustomLeft({
-                          ...customLeft,
-                          quantity: e.target.value,
-                        })
-                      }
-                      placeholder="Quantity (e.g., 500 g)"
-                      className="flex-1 px-4 py-4 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium"
-                    />
-                    <button
-                      onClick={handleAddCustomLeft}
-                      className="px-6 py-3 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 shadow-lg shadow-emerald-200 transition-all"
-                    >
-                      Add
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleAddCustomLeft}
+                    className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-bold"
+                  >
+                    Add
+                  </button>
+                  <button
+                    onClick={() => setShowCustomLeft(false)}
+                    className="px-3 text-xs text-gray-400 underline"
+                  >
+                    Cancel
+                  </button>
                 </div>
-                <button
-                  onClick={() => setShowCustomLeft(false)}
-                  className="text-sm font-medium text-gray-400 mt-3 hover:text-gray-600 underline decoration-gray-300 underline-offset-4"
-                >
-                  Cancel
-                </button>
               </div>
             )}
           </div>
         </div>
 
-        <div className="bg-emerald-900/5 rounded-3xl border border-emerald-100/50 shadow-xl shadow-emerald-100/20 flex flex-col h-full sticky top-8 animate-in slide-in-from-right-4 duration-500 delay-200">
-          <div className="p-6 md:p-8 border-b border-emerald-100/50">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-emerald-950 flex items-center gap-3">
-                <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
-                  <ShoppingBasket size={20} />
-                </div>
-                Your Basket
-              </h2>
-              <span className="bg-white text-emerald-700 border border-emerald-100 text-xs font-bold px-3 py-1 rounded-full shadow-sm">
-                {groceryList.length} Items
+        {/* --- RIGHT: Basket & Budget (Fixed Height) --- */}
+        <div className="flex flex-col gap-4 h-full min-h-0">
+          {/* 1. REQUIRED BUDGET CARD */}
+          <div
+            className={`shrink-0 bg-white p-5 rounded-3xl shadow-lg border-2 transition-colors ${
+              budgetError ? "border-red-400 bg-red-50" : "border-emerald-100"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <label
+                className={`text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${
+                  budgetError ? "text-red-600" : "text-emerald-800"
+                }`}
+              >
+                <Wallet size={16} /> Required Budget
+              </label>
+              {budgetError && (
+                <span className="text-xs text-red-600 font-bold flex items-center gap-1">
+                  <AlertCircle size={12} /> Enter amount
+                </span>
+              )}
+            </div>
+
+            <div className="relative">
+              <span
+                className={`absolute left-0 top-1/2 -translate-y-1/2 text-3xl font-light ${
+                  budgetError ? "text-red-400" : "text-emerald-500"
+                }`}
+              >
+                ₱
+              </span>
+              <input
+                type="number"
+                value={budget}
+                onChange={(e) => {
+                  setBudget(e.target.value);
+                  setBudgetError(false);
+                }}
+                placeholder="0.00"
+                className={`w-full pl-8 bg-transparent text-4xl font-extrabold focus:outline-none placeholder-gray-300 ${
+                  budgetError ? "text-red-600" : "text-gray-800"
+                }`}
+              />
+            </div>
+          </div>
+
+          {/* 2. BASKET LIST (Fills remaining space) */}
+          <div className="flex-1 bg-emerald-900/5 rounded-3xl border border-emerald-100/50 shadow-inner flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-emerald-100/50 flex justify-between items-center">
+              <h3 className="font-bold text-emerald-900 flex items-center gap-2">
+                <ShoppingBasket size={18} /> Basket
+              </h3>
+              <span className="bg-white text-emerald-800 text-xs font-bold px-2 py-1 rounded-full shadow-sm">
+                {groceryList.length} items
               </span>
             </div>
 
-            <div className="bg-white p-3 rounded-2xl border border-emerald-200 shadow-sm flex items-center gap-3">
-              <div className="bg-emerald-100 p-2 rounded-xl text-emerald-600">
-                <Coins size={20} />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs font-bold text-emerald-800 uppercase tracking-wide">
-                  Target Budget
-                </p>
-                <input
-                  type="number"
-                  placeholder="Set limit (Optional)"
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                  className="w-full bg-transparent font-bold text-gray-800 placeholder-gray-400 focus:outline-none"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex-1 p-6 md:p-8">
-            {groceryList.length === 0 ? (
-              <div className="h-48 flex flex-col items-center justify-center text-center border-2 border-dashed border-emerald-200/60 rounded-2xl bg-white/40">
-                <ShoppingBasket size={48} className="text-emerald-200 mb-3" />
-                <p className="text-emerald-900 font-bold">
-                  Your basket is empty
-                </p>
-                <p className="text-sm text-emerald-600/60">
-                  Select ingredients from the left
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {groceryList.map((item, idx) => (
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {groceryList.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
+                  <ShoppingBasket size={40} className="text-emerald-400 mb-2" />
+                  <p className="text-sm text-emerald-800 font-medium">
+                    Basket is empty
+                  </p>
+                </div>
+              ) : (
+                groceryList.map((item, idx) => (
                   <div
                     key={idx}
-                    className="group flex justify-between items-center bg-white p-4 pr-4 rounded-2xl border border-emerald-100 shadow-sm hover:shadow-md transition-all animate-in fade-in slide-in-from-bottom-2"
+                    className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-emerald-50/50 animate-in slide-in-from-bottom-2"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-1.5 h-10 bg-emerald-400 rounded-full" />
+                    <div className="flex items-center gap-3">
+                      <div className="w-1 h-8 bg-emerald-400 rounded-full" />
                       <div>
-                        <p className="font-bold text-gray-800 text-lg leading-tight">
+                        <p className="font-bold text-gray-800 text-sm">
                           {item.name}
                         </p>
-                        <p className="text-sm font-medium text-gray-500 mt-0.5">
-                          {item.quantity}
-                        </p>
+                        <p className="text-xs text-gray-500">{item.quantity}</p>
                       </div>
                     </div>
-
                     <button
                       onClick={() => removeItem(idx)}
-                      className="p-3 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
-                      title="Remove item"
+                      className="text-gray-300 hover:text-red-500 transition-colors"
                     >
-                      <Trash2 size={20} />
+                      <Trash2 size={16} />
                     </button>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="p-6 md:p-8 bg-white/60 backdrop-blur-sm border-t border-emerald-100 rounded-b-3xl">
-            <button
-              onClick={handleGenerateRecommendation}
-              disabled={isGenerating || groceryList.length === 0}
-              className={`
-                w-full py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg transition-all
-                ${
-                  isGenerating || groceryList.length === 0
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
-                    : "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200 hover:shadow-emerald-300 active:scale-[0.98]"
-                }
-              `}
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="animate-spin" />
-                  Analyzing Prices...
-                </>
-              ) : (
-                <>
-                  <Sparkles size={20} />
-                  Shop Smart Now
-                </>
+                ))
               )}
-            </button>
-            <p className="text-center text-xs font-medium text-emerald-800/40 mt-4">
-              AI will optimize this list based on current market prices.
-            </p>
+            </div>
+
+            {/* GENERATE BUTTON */}
+            <div className="p-4 bg-white border-t border-emerald-100">
+              <button
+                onClick={handleGenerateRecommendation}
+                disabled={isGenerating || groceryList.length === 0}
+                className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${
+                  isGenerating || groceryList.length === 0
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200"
+                }`}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="animate-spin" /> Calculating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={18} /> Shop Smart Now
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
