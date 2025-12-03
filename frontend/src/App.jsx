@@ -14,6 +14,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/recipe-results" element={<RecipeResultsPage />} />
+            <Route path="/works" element={<HowItWorksPage />} />
             <Route
               path="/recommendation"
               element={<RecommendationResultsPage />}

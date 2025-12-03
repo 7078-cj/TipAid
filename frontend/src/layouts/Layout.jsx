@@ -9,12 +9,12 @@ export default function Layout({ children }) {
       <nav className="w-full max-w-7xl mx-auto px-6 py-6 flex justify-between items-center">
         <div className="flex items-center cursor-pointer">
           <img src="tpaid_logo.png" className="h-7 w-7" />
-          <span className="text-xl font-bold text-emerald-900 tracking-tight ml-1" onClick={() => navigate('/')}>
+          <span className="text-xl font-bold text-emerald-900 tracking-tight ml-1 cursor-pointer" onClick={() => navigate('/')}>
             Tipaid
           </span>
         </div>
 
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-500">
+        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-500 cursor-pointer">
           <button className="hover:text-emerald-600 transition-colors" onClick={() => navigate('/works')}>
             How it works
           </button>
