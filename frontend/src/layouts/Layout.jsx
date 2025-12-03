@@ -14,8 +14,8 @@ export default function Layout({ children }) {
           </span>
         </div>
 
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-500 cursor-pointer">
-          <button className="hover:text-emerald-600 transition-colors" onClick={() => navigate('/works')}>
+        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-500">
+          <button className="hover:text-emerald-600 transition-colors cursor-pointer" onClick={() => navigate('/works')}>
             How it works
           </button>
         </div>
