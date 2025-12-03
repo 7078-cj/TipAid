@@ -27,7 +27,7 @@ export default function RecommendationResultsPage() {
 
   const recommendation = form.Recommendation;
   const recipeData = form.RecipeData;
-  const userBudget = parseFloat(form.Budget) || 0;
+  const userBudget = parseFloat(form.Budget) || 0; // Fixed case sensitivity (form.budget)
 
   // 2. State for currently selected store
   const [selectedStore, setSelectedStore] = useState(null);
@@ -36,27 +36,8 @@ export default function RecommendationResultsPage() {
   const ingredients = recommendation?.ingredients || [];
   const storeNames = ["osave", "dali", "pampanga_market"];
 
-  // 4. useEffect to handle redirects and initial state
-  useEffect(() => {
-    if (!recommendation) {
-      setTimeout(() => navigate("/"), 0);
-    } else if (!selectedStore) {
-      // Set the default store if not selected yet
-      setSelectedStore(recommendation.recommended_store);
-    }
-  }, [recommendation, navigate, selectedStore]);
-
-  // --- Logic: Dynamic Total Calculation (MOVED UP) ---
-  // Calculates total based on whichever store is currently selected
-  const currentTotal = useMemo(() => {
-    if (!selectedStore || ingredients.length === 0) return 0;
-
-    return ingredients.reduce((sum, item) => {
-      return sum + (item.prices?.[selectedStore] || 0);
-    }, 0);
-  }, [selectedStore, ingredients]);
-
   // --- Logic: Leaderboard Calculation (MOVED UP) ---
+  // We calculate this FIRST so we know which store is actually the cheapest
   const storeLeaderboard = useMemo(() => {
     if (ingredients.length === 0) return [];
 
@@ -67,11 +48,32 @@ export default function RecommendationResultsPage() {
         }, 0);
         return { name: store, total };
       })
-      .sort((a, b) => a.total - b.total);
+      .sort((a, b) => a.total - b.total); // Sort cheapest to expensive
   }, [ingredients, storeNames]);
 
-  // 5. NOW we can do the Conditional Return
-  // If data is missing or store isn't selected yet, show nothing (or a loader)
+  // Determine the Cheapest Store Name
+  const cheapestStoreName = storeLeaderboard.length > 0 ? storeLeaderboard[0].name : null;
+
+  // 4. useEffect to handle redirects and initial state
+  useEffect(() => {
+    if (!recommendation) {
+      setTimeout(() => navigate("/"), 0);
+    } else if (!selectedStore && cheapestStoreName) {
+      // FIX: Set default to the CHEAPEST option found
+      setSelectedStore(cheapestStoreName);
+    }
+  }, [recommendation, navigate, selectedStore, cheapestStoreName]);
+
+  // --- Logic: Dynamic Total Calculation ---
+  const currentTotal = useMemo(() => {
+    if (!selectedStore || ingredients.length === 0) return 0;
+
+    return ingredients.reduce((sum, item) => {
+      return sum + (item.prices?.[selectedStore] || 0);
+    }, 0);
+  }, [selectedStore, ingredients]);
+
+  // 5. Conditional Return
   if (!recommendation || !selectedStore) return null;
 
   // Helper: Format Price
@@ -84,14 +86,29 @@ export default function RecommendationResultsPage() {
   const displayStore = (store) =>
     store?.replace("_", " ").toUpperCase() || "STORE";
 
-  // --- Logic: Download PNG ---
+  // --- Logic: Download PNG (FIXED CROPPING) ---
   const downloadPNG = async () => {
     if (!tableRef.current) return;
     try {
-      const dataUrl = await htmlToImage.toPng(tableRef.current, {
+      const element = tableRef.current;
+      
+      // 1. Get the TRUE dimensions of the table content
+      const width = element.scrollWidth; 
+      const height = element.scrollHeight; 
+
+      const dataUrl = await htmlToImage.toPng(element, {
         quality: 1.0,
         backgroundColor: "#ffffff",
-        style: { padding: "20px" },
+        // 2. Force the image capture to use the full content dimensions
+        width: width,
+        height: height,
+        style: {
+             // 3. Override styles to ensure nothing is hidden during capture
+             overflow: "visible", 
+             maxWidth: "none",
+             maxHeight: "none",
+             padding: "40px", // Add nice padding
+        },
       });
       const link = document.createElement("a");
       link.download = `shopping_list_${selectedStore}.png`;
@@ -159,7 +176,7 @@ export default function RecommendationResultsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex justify-center p-4 md:p-8 font-sans pb-24">
+    <div className="min-h-screen flex justify-center p-4 md:p-8 font-sans pb-24">
       <div className="w-full max-w-6xl bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200/50 overflow-hidden border border-gray-100">
         {/* --- Header Section --- */}
         <div className="p-8 md:p-12 bg-emerald-900 text-white relative overflow-hidden transition-colors duration-500">
@@ -184,9 +201,10 @@ export default function RecommendationResultsPage() {
                 </span>
                 <span className="text-4xl font-bold text-white tracking-tight flex items-center gap-3 animate-in fade-in slide-in-from-left-4 duration-300">
                   {displayStore(selectedStore)}
-                  {selectedStore === recommendation.recommended_store && (
+                  {/* FIX: Show Recommended badge if selected store is the CHEAPEST one */}
+                  {selectedStore === cheapestStoreName && (
                     <span className="bg-emerald-500 text-emerald-950 text-xs px-2 py-1 rounded-full font-bold">
-                      Recommended
+                      Best Price
                     </span>
                   )}
                 </span>
@@ -282,7 +300,6 @@ export default function RecommendationResultsPage() {
                   List for {displayStore(selectedStore)}
                 </h2>
 
-                {/* Legend (Hidden in small screens, visible in print) */}
                 <div className="flex gap-4 text-xs font-medium">
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 bg-emerald-100 border border-emerald-500 rounded-sm"></div>
@@ -295,7 +312,8 @@ export default function RecommendationResultsPage() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto border border-gray-100 rounded-2xl shadow-sm bg-white">
+              {/* Added overflow-visible for printing purposes */}
+              <div className="overflow-x-auto border border-gray-100 rounded-2xl shadow-sm bg-white print:overflow-visible">
                 <table className="min-w-full divide-y divide-gray-100">
                   <thead>
                     <tr className="bg-gray-50/80">
@@ -336,12 +354,9 @@ export default function RecommendationResultsPage() {
                         {storeNames.map((store) => {
                           const price = item.prices ? item.prices[store] : null;
 
-                          // Highlight Logic based on SELECTED store, not just recommendation
                           const isSelectedColumn = store === selectedStore;
                           const isCheapestOption =
                             item.cheapest_store === store;
-
-                          // If this isn't the selected store, but it IS the cheapest, highlight blue
                           const isBetterDeal =
                             isCheapestOption && !isSelectedColumn;
 
@@ -349,14 +364,12 @@ export default function RecommendationResultsPage() {
                           let innerClass = "";
 
                           if (isSelectedColumn) {
-                            // Highlighting the Selected Store Column
                             cellClass =
                               "bg-emerald-50/30 text-emerald-800 font-bold border-x border-emerald-100/50";
                             if (isCheapestOption) {
                               innerClass = "text-emerald-700";
                             }
                           } else if (isBetterDeal) {
-                            // Highlighting a BETTER price at a DIFFERENT store (Blue)
                             cellClass =
                               "bg-blue-50/50 text-blue-600 font-bold cursor-help opacity-100";
                             innerClass =
@@ -405,7 +418,7 @@ export default function RecommendationResultsPage() {
               onClick={downloadPNG}
               className="px-8 py-4 bg-blue-500 text-white rounded-2xl hover:bg-blue-600 shadow-lg shadow-blue-200 hover:shadow-blue-300 transition-all transform active:scale-95 font-bold flex items-center justify-center gap-2"
             >
-              <Download size={18} />
+              <Download/>
               Download List
             </button>
           </div>
