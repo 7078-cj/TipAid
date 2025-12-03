@@ -50,6 +50,7 @@ def generate_recommendation(request):
 
         # Fetch all real-time prices from AI
         prices = get_prices_from_ai(name,quantity)
+        print(prices)
 
         # Determine cheapest store for this ingredient
         cheapest_store = min(
@@ -135,6 +136,7 @@ def generate_ingredients(request):
     """
 
     ingredients_list = generate(prompt)
+    print(ingredients_list)
 
     if not ingredients_list.get("success"):
         return Response({"error": "AI generation failed", "details": ingredients_list}, status=500)
