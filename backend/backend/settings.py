@@ -217,3 +217,11 @@ else:
             "BACKEND": "channels.layers.InMemoryChannelLayer"
         }
     }
+    
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "ai_prices_cache",
+        "TIMEOUT": 60*60*24,  # 24 hours
+    }
+}

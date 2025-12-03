@@ -49,7 +49,7 @@ def generate_recommendation(request):
             continue
 
         # Fetch all real-time prices from AI
-        prices = get_prices_from_ai(name)
+        prices = get_prices_from_ai(name,quantity)
 
         # Determine cheapest store for this ingredient
         cheapest_store = min(

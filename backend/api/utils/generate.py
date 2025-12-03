@@ -7,6 +7,7 @@ import os
 from django.conf import settings
 import pandas as pd
 from rest_framework.response import Response
+from django.core.cache import cache
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -144,45 +145,50 @@ def normalize_price(value):
 # -----------------------------------------------
 #   SCRAPE ALL STORES (Google URLs)
 # -----------------------------------------------
-def get_prices_from_ai(name):
+def get_prices_from_ai(name, quantity):
     """
-    Uses AI to scrape Google for each store and returns
-    consistent, normalized, non-null prices.
+    Get prices for an ingredient using AI, with Django cache.
+    Limits AI calls to 1 per ingredient.
     """
 
-    prices = {
-        "osave": ai_webscrape_price("OSAVE", name),
-        "dali": ai_webscrape_price("Dali Supermarket", name),
-        "pampanga_market": ai_webscrape_price("Pampanga Market", name)
-    }
+    # Use lowercase key to be consistent
+    cache_key = f"ingredient_prices:{name.lower()}"
+    cached_prices = cache.get(cache_key)
+    if cached_prices:
+        return cached_prices
 
-    # Fallback if any price is missing
-    missing_any = any(p is None for p in prices.values())
-    if missing_any:
-        prompt = f"""
-        You MUST estimate accurate ingredient prices for:
-        - OSAVE supermarket
-        - Dali Supermarket (Philippines)
-        - Public Markets in Pampanga
+    # ------------- AI Call (1 per ingredient) -------------
+    prompt = f"""
+    You are an AI web scraping engine.
 
-        Ingredient: "{name}"
+    Search the web for the ingredient "{name}"  with quantity of {quantity} in pampanga
+    and find prices in these stores:
+    1. OSAVE
+    2. Dali Supermarket
+    3. Pampanga Market
 
-        Return STRICT JSON:
-        {{
-          "osave": <number>,
-          "dali": <number>,
-          "pampanga_market": <number>
-        }}
-        """
-        ai_result = generate(prompt)
-        if ai_result.get("success"):
-            fb = ai_result["recommendation"]
-            for store_key in prices:
-                if prices[store_key] is None:
-                    prices[store_key] = fb.get(store_key)
+    Return STRICT JSON only with these keys:
+
+    {{
+        "osave": <number>,
+        "dali": <number>,
+        "pampanga_market": <number>
+    }}
+    """
+
+    ai_result = generate(prompt)
+
+    if ai_result.get("success"):
+        prices = ai_result["recommendation"]
+    else:
+        # fallback zeros if AI fails
+        prices = {"osave": 0.0, "dali": 0.0, "pampanga_market": 0.0}
 
     # Normalize all prices
-    for store_key in prices:
-        prices[store_key] = normalize_price(prices[store_key])
+    for key in prices:
+        prices[key] = normalize_price(prices.get(key))
+
+    # ------------- Store in cache -------------
+    cache.set(cache_key, prices, timeout=60*60*24)  # cache for 24 hours
 
     return prices
