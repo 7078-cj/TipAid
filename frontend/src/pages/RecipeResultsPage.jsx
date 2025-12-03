@@ -13,7 +13,8 @@ export default function RecipeResultsPage() {
   const [groceryList, setGroceryList] = useState([]);
   const [customItem, setCustomItem] = useState({ name: "", quantity: "" });
   const [showCustomInput, setShowCustomInput] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false); // New state for loading
+  // **isGenerating handles the single-click submission lock and loading state.**
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // --- Utility Functions ---
 
@@ -54,6 +55,7 @@ export default function RecipeResultsPage() {
       return;
     }
 
+    // 1. SET LOADING STATE: Disables the button immediately
     setIsGenerating(true);
 
     const payload = {
@@ -61,8 +63,6 @@ export default function RecipeResultsPage() {
       budget: recipe.budget,
       ingredients: groceryList.map((item) => ({
         name: item.name,
-        // The quantity from the UI is descriptive, but the backend requires a list of ingredients.
-        // We pass the full ingredient list structure from the groceryList state.
         quantity: item.quantity,
       })),
     };
@@ -74,7 +74,6 @@ export default function RecipeResultsPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // Add any necessary authorization headers if your Django setup requires them
         },
         body: JSON.stringify(payload),
       });
@@ -87,14 +86,18 @@ export default function RecipeResultsPage() {
       }
 
       const result = await response.json();
+      // 2. SUCCESS: Navigate and pass data
       navigate("/recommendation", { state: { recommendation: result } });
+
+      // NOTE: Since navigation occurs, the component unmounts,
+      // so we don't strictly need to set isGenerating(false) here.
     } catch (error) {
       console.error("❌ Error generating recommendation:", error.message);
       alert(`Failed to get recommendations: ${error.message}`);
-    } finally {
+      // 3. FAILURE: Reset loading state to allow retry
       setIsGenerating(false);
     }
-  }, [groceryList, recipe.people, recipe.budget]); // Dependencies for useCallback
+  }, [groceryList, recipe.people, recipe.budget, navigate]); // Added navigate to dependencies
 
   // --- Error Handling ---
   if (!recipe) {
@@ -131,7 +134,7 @@ export default function RecipeResultsPage() {
         </div>
 
         <div className="p-8 flex flex-col md:flex-row gap-8">
-          {/* Left Side: Recipe Ingredients */}
+          {/* Left Side: Recipe Ingredients (Unchanged) */}
           <div className="flex-1">
             <h2 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
               Recipe Ingredients 🍳
@@ -150,7 +153,9 @@ export default function RecipeResultsPage() {
 
                   <button
                     onClick={() => addItemToGrocery(item)}
-                    className="ml-4 px-3 py-1 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 active:scale-95 transition shadow-md flex items-center"
+                    // Disable while generating to prevent UI interaction bugs
+                    disabled={isGenerating}
+                    className="ml-4 px-3 py-1 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 active:scale-95 transition shadow-md flex items-center disabled:bg-teal-300"
                     title="Add to Grocery List"
                   >
                     + Add
@@ -166,7 +171,7 @@ export default function RecipeResultsPage() {
               Grocery List ({groceryList.length}) 🛒
             </h2>
 
-            {/* List Display */}
+            {/* List Display (Unchanged) */}
             <div className="min-h-[150px] space-y-3 p-2 bg-gray-50 rounded-xl border border-dashed border-gray-300 mb-6">
               {groceryList.length === 0 ? (
                 <p className="text-center text-gray-500 py-10">
@@ -189,7 +194,9 @@ export default function RecipeResultsPage() {
                     </div>
                     <button
                       onClick={() => removeItem(index)}
-                      className="px-3 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 active:scale-95 transition"
+                      // Disable while generating
+                      disabled={isGenerating}
+                      className="px-3 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 active:scale-95 transition disabled:bg-red-300"
                     >
                       Remove
                     </button>
@@ -202,7 +209,9 @@ export default function RecipeResultsPage() {
             {!showCustomInput && (
               <button
                 onClick={() => setShowCustomInput(true)}
-                className="w-full px-4 py-3 mb-4 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 transition active:scale-95 font-semibold"
+                // Disable while generating
+                disabled={isGenerating}
+                className="w-full px-4 py-3 mb-4 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 transition active:scale-95 font-semibold disabled:bg-gray-100 disabled:text-gray-400"
               >
                 + Add Manual Item
               </button>
@@ -244,19 +253,46 @@ export default function RecipeResultsPage() {
             {/* ACTION BUTTON: GENERATE RECOMMENDATION */}
             <button
               onClick={handleGenerateRecommendation}
+              // Button disabled if list is empty OR if loading/generating is true
               disabled={groceryList.length === 0 || isGenerating}
-              className="w-full px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 active:scale-95 transition font-semibold mt-4 disabled:bg-gray-400"
+              className="w-full px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 active:scale-95 transition font-semibold mt-4 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {isGenerating
-                ? "Generating..."
-                : "✨ Generate Store Recommendation"}
+              {isGenerating ? (
+                <div className="flex items-center justify-center space-x-2">
+                  {/* Simple Loading Spinner using Tailwind Animation */}
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  <span>Generating...</span>
+                </div>
+              ) : (
+                "✨ Generate Store Recommendation"
+              )}
             </button>
 
             {/* Back Button */}
             <div className="mt-6 flex justify-center">
               <button
                 onClick={() => navigate("/")}
-                className="px-6 py-3 bg-gray-300 text-gray-700 rounded-xl hover:bg-gray-400 active:scale-95 transition font-semibold"
+                disabled={isGenerating} // Disable navigation while processing
+                className="px-6 py-3 bg-gray-300 text-gray-700 rounded-xl hover:bg-gray-400 active:scale-95 transition font-semibold disabled:bg-gray-100 disabled:text-gray-400"
               >
                 ← Go Back to Form
               </button>
