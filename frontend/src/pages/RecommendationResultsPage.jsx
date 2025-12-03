@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFormContext } from "../contexts/FormContext";
 import {
@@ -18,27 +18,10 @@ export default function RecommendationResultsPage() {
   const recommendation = form.Recommendation;
 
   if (!recommendation) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-        <div className="bg-white p-8 rounded-3xl shadow-xl text-center max-w-md border border-gray-100">
-          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle size={32} />
-          </div>
-          <h2 className="text-xl font-bold text-gray-900">No Data Found</h2>
-          <p className="text-gray-500 mt-2 mb-6">
-            We couldn't find your plan. Please try generating it again.
-          </p>
-          <button
-            onClick={() => navigate("/")}
-            className="w-full px-6 py-3 bg-emerald-500 text-white font-bold rounded-2xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200"
-          >
-            Go Home
-          </button>
-        </div>
-      </div>
-    );
+    setTimeout(() => navigate("/"), 0);
+    return null;
   }
-
+  
   const {
     recommended_store,
     ingredients,
@@ -194,7 +177,7 @@ export default function RecommendationResultsPage() {
             </button>
 
             <button
-              onClick={() => navigate("/results")} 
+              onClick={() => navigate("/recipe-results")} 
               className="px-8 py-4 bg-emerald-500 text-white rounded-2xl hover:bg-emerald-600 shadow-lg shadow-emerald-200 transition font-bold flex items-center justify-center gap-2"
             >
               <RefreshCcw size={18} />
