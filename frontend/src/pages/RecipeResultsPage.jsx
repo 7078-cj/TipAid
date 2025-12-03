@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 // Assuming the backend is running locally on port 8000 (common Django setup)
-const API_URL = "http://127.0.0.1:8000/api/generate/";
+const API_URL = `${import.meta.env.VITE_API_URL}generate/`;
 
 export default function RecipeResultsPage() {
   const { state } = useLocation();

@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useFormContext } from "../contexts/FormContext";
 import { useNavigate } from "react-router-dom";
 
+const API_URL = `${import.meta.env.VITE_API_URL}generate/ingredients`;
+
 export default function SummaryPage() {
   const { form } = useFormContext();
   const navigate = useNavigate();
@@ -66,7 +68,7 @@ export default function SummaryPage() {
 
     try {
       const res = await fetch(
-        "http://127.0.0.1:8000/api/generate/ingredients/",
+        API_URL,
         {
           method: "POST",
           headers: {
